@@ -1,4 +1,3 @@
 import streamlit as st
 
-def main():
-    st.title("Olá")
+st.title("Olá")
