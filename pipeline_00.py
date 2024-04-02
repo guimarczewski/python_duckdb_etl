@@ -5,6 +5,14 @@ import pandas as pandas
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
+from duckdb import DuckDBPyRelation
+from pandas import DataFrame
+
+import sys
+from datetime import datetime
+
+load_dotenv()
+
 def baixar_arquivos_gdrive(url_pasta, diretorio_local):
     os.makedirs(diretorio_local, exist_ok=True)
     gdown.download_folder(url_pasta, output=diretorio_local, quiet=False, use_cookies=False)
@@ -16,9 +24,52 @@ def listar_arquivos_csv(diretorio):
         if arquivo.endswith('.csv'):
             caminho_completo = os.path.join(diretorio, arquivo)
             arquivos_csv.append(caminho_completo)
+
+    #print(arquivos_csv)
     return arquivos_csv
 
+def ler_csv(caminho_do_arquivo):
+    dataframe_duckdb = duckdb.read_csv(caminho_do_arquivo)
+    return dataframe_duckdb
+
+def transformar(df: DuckDBPyRelation) -> DataFrame:
+    # execute query adding a new column
+    df_transformado = duckdb.sql("""
+                                    SELECT 
+                                    origin,
+                                    dest,
+                                    COUNT(*) AS flies_quant
+                                    FROM df 
+                                    GROUP BY 1, 2
+                                    ORDER BY flies_quant DESC""").df()
+    size = sys.getsizeof(df_transformado)
+    #print(f"O tamanho do DuckDBPyRelation na memória é {size} bytes.")
+    quant = duckdb.sql("SELECT COUNT(*) FROM df").df()
+    #print(df_transformado)
+    print(quant)
+    return df_transformado
+
+def salvar_no_postgres(df_duckdb, tabela):
+    DATABASE_URL = os.getenv("DATABASE_URL") # ex: 'postgresql://user:password@localhost:5432/database'
+    #print(DATABASE_URL)
+    engine = create_engine(DATABASE_URL)
+    # salvar o duckdb no postgres
+    df_duckdb.to_sql(tabela, con=engine, if_exists='append', index=False)
+
+
 if __name__ == "__main__":
-    url_pasta = 'url drive folder without ?shared'
+    print("Iniciando pipeline...")
+    print(f"A hora atual é {datetime.now().strftime('%H:%M:%S')}")
+    url_pasta = 'https://drive.google.com/drive/folders/1h2PgQbQqnSLDQK5KyZIdSb5f6F6i6Y-E'
     diretorio_local = '/workspace/python_duckdb_etl/files'
     baixar_arquivos_gdrive(url_pasta, diretorio_local)
+    print("Download finalizado")
+    print(f"A hora atual é {datetime.now().strftime('%H:%M:%S')}")
+    print("Iniciando transformações...")
+    print(f"A hora atual é {datetime.now().strftime('%H:%M:%S')}")
+    arquivos = listar_arquivos_csv(diretorio_local)
+    arquivo = ler_csv(arquivos)
+    duckdbdf = transformar(arquivo)
+    salvar_no_postgres(duckdbdf, "flies")
+    print("Pipeline finalizado")
+    print(f"A hora atual é {datetime.now().strftime('%H:%M:%S')}")
