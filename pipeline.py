@@ -88,8 +88,9 @@ def salvar_no_postgres(df_duckdb, tabela):
     df_duckdb.to_sql(tabela, con=engine, if_exists='append', index=False)
 
 
-if __name__ == "__main__":
-    print("Iniciando pipeline...")
+def pipeline():
+    logs = []
+    logs.append(f"Iniciando pipeline {datetime.now().strftime('%H:%M:%S')} ...")
     print(f"A hora atual é {datetime.now().strftime('%H:%M:%S')}")
 
     url_pasta = 'https://drive.google.com/drive/folders/1h2PgQbQqnSLDQK5KyZIdSb5f6F6i6Y-E'
@@ -99,7 +100,7 @@ if __name__ == "__main__":
     con = conectar_banco()
     inicializar_tabela(con)
     processados = arquivos_processados(con)
-    
+
     for caminho_do_arquivo in lista_de_arquivos:
         nome_arquivo = os.path.basename(caminho_do_arquivo)
         if nome_arquivo not in processados:
@@ -108,6 +109,13 @@ if __name__ == "__main__":
             salvar_no_postgres(duckdbdf, "flies")
             registrar_arquivo(con, nome_arquivo)
             print(f"Arquivo {nome_arquivo} processado e salvo {datetime.now().strftime('%H:%M:%S')}")
+            logs.append(f"Arquivo {nome_arquivo} processado e salvo {datetime.now().strftime('%H:%M:%S')}")
+
         else:
             print(f"Arquivo {nome_arquivo} já foi processado anteriormente.")
+            logs.append(f"Arquivo {nome_arquivo} já foi processado anteriormente.")
+
+    logs.append(f"Pipeline finalizado {datetime.now().strftime('%H:%M:%S')}")
     print(f"Pipeline finalizado {datetime.now().strftime('%H:%M:%S')}")
+    
+    return logs
