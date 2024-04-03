@@ -94,7 +94,7 @@ def pipeline():
     print(f"A hora atual é {datetime.now().strftime('%H:%M:%S')}")
 
     url_pasta = 'https://drive.google.com/drive/folders/1h2PgQbQqnSLDQK5KyZIdSb5f6F6i6Y-E'
-    diretorio_local = '/workspace/python_duckdb_etl/files'
+    diretorio_local = './files'
     #baixar_arquivos_gdrive(url_pasta, diretorio_local)
     lista_de_arquivos = listar_arquivos_csv(diretorio_local)
     con = conectar_banco()
