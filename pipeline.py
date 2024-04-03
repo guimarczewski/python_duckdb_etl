@@ -52,8 +52,15 @@ def listar_arquivos_csv(diretorio):
     #print(arquivos_csv)
     return arquivos_csv
 
-def ler_csv(caminho_do_arquivo):
-    dataframe_duckdb = duckdb.read_csv(caminho_do_arquivo)
+def ler_arquivo(caminho_do_arquivo):
+    if caminho_do_arquivo.name.lower().endswith('.csv'):
+        dataframe_duckdb = duckdb.read_csv(caminho_do_arquivo)
+    if caminho_do_arquivo.name.lower().endswith('.json'):
+        dataframe_duckdb = duckdb.read_json(caminho_do_arquivo)
+    if caminho_do_arquivo.name.lower().endswith('.parquet'):
+        dataframe_duckdb = duckdb.read_parquet(caminho_do_arquivo)
+    else:
+        raise ValueError(f"Tipo de arquivo não suportado")
     return dataframe_duckdb
 
 def transformar(df: DuckDBPyRelation) -> DataFrame:
@@ -96,7 +103,7 @@ if __name__ == "__main__":
     for caminho_do_arquivo in lista_de_arquivos:
         nome_arquivo = os.path.basename(caminho_do_arquivo)
         if nome_arquivo not in processados:
-            arquivo = ler_csv(caminho_do_arquivo)
+            arquivo = ler_arquivo(caminho_do_arquivo)
             duckdbdf = transformar(arquivo)
             salvar_no_postgres(duckdbdf, "flies")
             registrar_arquivo(con, nome_arquivo)
